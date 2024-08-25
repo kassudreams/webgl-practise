@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D RPG Game</title>
+
+    <!-- Since import maps are not yet supported by all browsers, its is
+        necessary to add the polyfill es-module-shims.js -->
+    <script async src="https://cdn.jsdelivr.net/npm/es-module-shims@1.8.3/dist/es-module-shims.min.js"></script>
+
+    <script type="importmap">
+            {
+            "imports": {
+                "box2d-wasm": "https://unpkg.com/box2d-wasm@7.0.0/dist/es/Box2D.js",
+                "gl-matrix": "https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/+esm"
+            }
+        }
+    </script>
+
+    <style>
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+        }
+        canvas { 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+        }
+    </style>
+
+</head>
+<body>
+    <canvas id="glCanvas"></canvas>
+    <script src="src/utils.js" type="module"></script>
+    <script src="src/shaders.js" type="module"></script>
+    <script src="src/models.js" type="module"></script>
+    <script src="src/textures.js" type="module"></script>
+    <script src="src/game.js" type="module"></script>
+    <script src="src/main.js" type="module"></script>
+</body>
+</html>
