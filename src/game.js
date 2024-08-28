@@ -6,18 +6,11 @@ import { Player } from './player.js';
 import { mat4 } from 'gl-matrix';
 
 export function startGame(gl) {
-    // Initialize shaders
     const shaderProgram = createProgram(gl, vertexShaderSource, fragmentShaderSource);
-
-    // Create the player model (a pyramid)
     const playerModel = createPyramidModel(gl);
     const groundModel = createGroundModel(gl);
-    const player = new Player([0, 0, 0]); // Initialize the player at the origin
-
-    // Initialize the camera
-    const camera = new Camera([0, 2, 10]);
-
-    // Create a projection matrix
+    const player = new Player([0, 0, 0]);
+    const camera = new Camera([0, 5, 10], player.getPosition());
     const projectionMatrix = createPerspectiveMatrix(
         Math.PI / 4,
         gl.canvas.clientWidth / gl.canvas.clientHeight,
@@ -26,9 +19,39 @@ export function startGame(gl) {
     );
     camera.setProjectionMatrix(projectionMatrix);
 
-
-    // Set up keyboard input tracking
     let keys = {};
+
+    function handleInput() {
+        if (keys["ArrowUp"]) player.move("forward");
+        if (keys["ArrowDown"]) player.move("backward");
+        if (keys["ArrowLeft"]) player.move("left");
+        if (keys["ArrowRight"]) player.move("right");
+    }
+    
+
+
+    // Function to update shaders
+    function updateShaders(newVertexShaderSource, newFragmentShaderSource) {
+        const newShaderProgram = createProgram(gl, newVertexShaderSource, newFragmentShaderSource);
+        if (newShaderProgram) {
+            shaderProgram = newShaderProgram;
+        } else {
+            console.error('Failed to update shaders. Reverting to the previous version.');
+        }
+    }
+
+    let lastFrameTime = 0;
+
+    function updateFPS(currentTime) {
+        const fpsCounter = document.getElementById('fps');
+        const delta = currentTime - lastFrameTime;
+        const fps = (1000 / delta).toFixed(2);
+
+        fpsCounter.textContent = `FPS: ${fps}`; // Update the text content
+
+        lastFrameTime = currentTime;
+    }
+    
     window.addEventListener("keydown", function (event) {
         keys[event.key] = true;
     });
@@ -36,54 +59,61 @@ export function startGame(gl) {
         keys[event.key] = false;
     });
 
-    // Handle player input and movement
-    function handleInput() {
-        if (keys["ArrowUp"]) player.move("forward");
-        if (keys["ArrowDown"]) player.move("backward");
-        if (keys["ArrowLeft"]) player.move("left");
-        if (keys["ArrowRight"]) player.move("right");
-    }
-
-    // Main render loop
-    function drawScene() {
-        // Clear the screen
+    function drawScene(currentTime) {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        // Use the shader program
+        // Activate the shader program
         gl.useProgram(shaderProgram);
 
-        // Handle input and update player position
-        handleInput();
-        const playerPosition = player.getPosition();
-        camera.followPlayer(playerPosition);
+        console.log("Active Program:", gl.getParameter(gl.CURRENT_PROGRAM));
 
-        // Draw the ground
-        const groundModelViewMatrix = mat4.create();
-        groundModelViewMatrix[13] = -1.0; // Position the ground at the base level
-        groundModel.draw(gl, shaderProgram, groundModelViewMatrix, projectionMatrix);
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            console.error('Shader program failed to link:', gl.getProgramInfoLog(shaderProgram));
+        }
 
-        // Draw the player model
-        const modelViewMatrix = mat4.create();
-        mat4.translate(modelViewMatrix, modelViewMatrix, playerPosition);
-        playerModel.draw(gl, shaderProgram, modelViewMatrix, projectionMatrix);
+    // Set uniform locations
+    const uViewMatrixLocation = gl.getUniformLocation(shaderProgram, 'uViewMatrix');
+    const uModelViewMatrixLocation = gl.getUniformLocation(shaderProgram, 'uModelViewMatrix');
+    const uProjectionMatrixLocation = gl.getUniformLocation(shaderProgram, 'uProjectionMatrix');
 
-        // Set view and projection matrices
-        gl.uniformMatrix4fv(
-            gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
-            false,
-            camera.getViewMatrix()
-        );
-        gl.uniformMatrix4fv(
-            gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
-            false,
-            camera.getProjectionMatrix()
-        );
+    // Ensure the player movement is handled before updating the camera
+    handleInput();
 
+    const playerPosition = player.getPosition();
+    camera.update(playerPosition);
 
-        // Request the next frame
-        requestAnimationFrame(drawScene);
-    }
+    // Set the ground's model matrix
+    const groundModelViewMatrix = mat4.create();
+    mat4.translate(groundModelViewMatrix, groundModelViewMatrix, [0, -1.0, 0]);
+    gl.uniformMatrix4fv(uModelViewMatrixLocation, false, groundModelViewMatrix);
 
-    // Start the rendering loop
+    // Set the camera's view matrix
+    gl.uniformMatrix4fv(uViewMatrixLocation, false, camera.getViewMatrix());
+
+    // Set the projection matrix
+    gl.uniformMatrix4fv(uProjectionMatrixLocation, false, camera.getProjectionMatrix());
+
+    // Draw the ground
+    groundModel.draw(gl, shaderProgram, groundModelViewMatrix, camera.getProjectionMatrix());
+
+    // Set the player's model matrix
+    const playerModelViewMatrix = mat4.create();
+    mat4.translate(playerModelViewMatrix, playerModelViewMatrix, playerPosition);
+    gl.uniformMatrix4fv(uModelViewMatrixLocation, false, playerModelViewMatrix);
+
+    // Draw the player
+    playerModel.draw(gl, shaderProgram, playerModelViewMatrix, camera.getProjectionMatrix());
+
+    // Request to draw the next frame
     requestAnimationFrame(drawScene);
+}
+
+    document.addEventListener('keydown', (e) => (keys[e.key] = true));
+    document.addEventListener('keyup', (e) => (keys[e.key] = false));
+
+
+    // Start drawing the scene
+    requestAnimationFrame(drawScene);
+
+    return { updateShaders, camera };
 }

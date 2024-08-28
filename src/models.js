@@ -3,12 +3,12 @@ export function createPyramidModel(gl) {
     const vertices = new Float32Array([
         // Base
         -1.0, -1.0, -1.0,
-         1.0, -1.0, -1.0,
-         1.0, -1.0,  1.0,
-        -1.0, -1.0,  1.0,
+        1.0, -1.0, -1.0,
+        1.0, -1.0, 1.0,
+        -1.0, -1.0, 1.0,
 
         // Apex
-         0.0,  1.0,  0.0
+        0.0, 1.0, 0.0
     ]);
 
     // Define the colors for each vertex
@@ -88,9 +88,9 @@ export function createPyramidModel(gl) {
 export function createGroundModel(gl) {
     const vertices = new Float32Array([
         -10.0, 0.0, -10.0,
-         10.0, 0.0, -10.0,
-         10.0, 0.0,  10.0,
-        -10.0, 0.0,  10.0,
+        10.0, 0.0, -10.0,
+        10.0, 0.0, 10.0,
+        -10.0, 0.0, 10.0,
     ]);
 
     const colors = new Float32Array([

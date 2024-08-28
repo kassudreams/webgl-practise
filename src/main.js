@@ -1,18 +1,48 @@
 import { startGame } from './game.js';
+import { initShaderEditor } from './shader-editor.js';
 
-function resizeCanvasToDisplaySize(canvas) {
+function toggleShaderEditor() {
+    const editor = document.getElementById('editor');
+    editor.style.display = editor.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleFPSCounter() {
+    const fpsCounter = document.getElementById('fps');
+    fpsCounter.style.display = fpsCounter.style.display === 'none' ? 'block' : 'none';
+}
+
+
+
+function resizeCanvasToDisplaySize(canvas, gl) {
     const displayWidth = canvas.clientWidth;
     const displayHeight = canvas.clientHeight;
 
-    // Check if the canvas size needs to be updated
     if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-        // Set the canvas width and height to the display size
         canvas.width = displayWidth;
         canvas.height = displayHeight;
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     }
 }
+/*
+function updateFPS(fpsElement) {
+    let lastFrameTime = performance.now();
 
-function main() {
+    function loop() {
+        const currentFrameTime = performance.now();
+        const delta = (currentFrameTime - lastFrameTime) / 1000;
+        lastFrameTime = currentFrameTime;
+
+        const fps = (1 / delta).toFixed(2);
+        fpsElement.textContent = `FPS: ${fps}`;
+
+        requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+}
+*/
+
+window.onload = () => {
     const canvas = document.getElementById("glCanvas");
     const gl = canvas.getContext("webgl2");
 
@@ -22,7 +52,7 @@ function main() {
     }
 
     // Set the canvas size
-    resizeCanvasToDisplaySize(canvas);
+    resizeCanvasToDisplaySize(canvas, gl);
 
     // Set the viewport to match the canvas dimensions
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -33,11 +63,39 @@ function main() {
     gl.enable(gl.DEPTH_TEST);
     // Near things obscure far things
     gl.depthFunc(gl.LEQUAL);
-    // Clear the color as well as the depth buffer.
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // Start the game
-    startGame(gl, canvas);
-}
+    // Make sure the FPS counter is initially visible
+    const fpsCounter = document.getElementById('fps');
+    fpsCounter.style.display = 'block';
 
-window.onload = main;
+    // Start the game and show FPS counter
+    const game = startGame(gl);
+    initShaderEditor(gl, game);
+
+        // Camera controls
+        const cameraModeSelect = document.getElementById('cameraMode');
+        const cameraDistanceSlider = document.getElementById('cameraDistance');
+        const cameraAngleXSlider = document.getElementById('cameraAngleX');
+        const cameraAngleYSlider = document.getElementById('cameraAngleY');
+    
+        cameraModeSelect.addEventListener('change', () => {
+            game.camera.setMode(cameraModeSelect.value);
+        });
+    
+        cameraDistanceSlider.addEventListener('input', () => {
+            game.camera.setDistance(parseFloat(cameraDistanceSlider.value));
+        });
+    
+        cameraAngleXSlider.addEventListener('input', () => {
+            game.camera.setAngle(parseFloat(cameraAngleXSlider.value), game.camera.angle.y);
+        });
+    
+        cameraAngleYSlider.addEventListener('input', () => {
+            game.camera.setAngle(game.camera.angle.x, parseFloat(cameraAngleYSlider.value));
+        });
+
+};
+
+// Expose the toggle function to the global scope
+window.toggleShaderEditor = toggleShaderEditor;
+window.toggleFPSCounter = toggleFPSCounter;

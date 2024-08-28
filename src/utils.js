@@ -31,8 +31,17 @@ export function createProgram(gl, vertexShaderSource, fragmentShaderSource) {
     return shaderProgram;
 }
 
-export function createPerspectiveMatrix(fov, aspect, near, far) {
-    const perspectiveMatrix = mat4.create();
-    mat4.perspective(perspectiveMatrix, fov, aspect, near, far);
-    return perspectiveMatrix;
+/**
+ * Create a perspective projection matrix.
+ * @param {number} fieldOfView - The field of view in radians.
+ * @param {number} aspect - The aspect ratio (width / height).
+ * @param {number} near - The near clipping plane distance.
+ * @param {number} far - The far clipping plane distance.
+ * @returns {mat4} - The perspective projection matrix.
+ */
+
+export function createPerspectiveMatrix(fieldOfView, aspect, near, far) {
+    const projectionMatrix = mat4.create();
+    mat4.perspective(projectionMatrix, fieldOfView, aspect, near, far);
+    return projectionMatrix;
 }
